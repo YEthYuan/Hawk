@@ -1,8 +1,11 @@
 package com.example.mobileobjectdetection.ui.detection;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -22,12 +25,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.mobileobjectdetection.R;
 import com.example.mobileobjectdetection.YoloV5Ncnn;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
@@ -41,6 +47,7 @@ public class DetectionFragment extends Fragment {
     private ImageView imageView;
     private Bitmap bitmap = null;
     private Bitmap yourSelectedImage = null;
+    private static String NAME_OF_NEW_IMAGE;
 
     private YoloV5Ncnn yolov5ncnn = new YoloV5Ncnn();
 
@@ -65,6 +72,14 @@ public class DetectionFragment extends Fragment {
                 Intent i = new Intent(Intent.ACTION_PICK);
                 i.setType("image/*");
                 startActivityForResult(i, SELECT_IMAGE);
+            }
+        });
+
+        Button buttonCamera = (Button)root.findViewById(R.id.buttonDetectionCamera);
+        buttonCamera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
             }
         });
 
@@ -255,6 +270,5 @@ public class DetectionFragment extends Fragment {
         matrix.postRotate(rotate);
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
     }
-
 
 }
