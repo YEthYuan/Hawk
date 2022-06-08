@@ -14,7 +14,10 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -23,10 +26,12 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -36,6 +41,8 @@ import com.example.mobileobjectdetection.YoloV5Ncnn;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class DetectionFragment extends Fragment {
@@ -43,11 +50,13 @@ public class DetectionFragment extends Fragment {
     private DetectionViewModel detectionViewModel;
 
     private static final int SELECT_IMAGE = 1;
+    public static final int TAKE_PHOTO = 2;
 
     private ImageView imageView;
     private Bitmap bitmap = null;
     private Bitmap yourSelectedImage = null;
     private static String NAME_OF_NEW_IMAGE;
+    private Uri imageUri;
 
     private YoloV5Ncnn yolov5ncnn = new YoloV5Ncnn();
 
@@ -63,6 +72,7 @@ public class DetectionFragment extends Fragment {
             Log.e("MainActivity", "yolov5ncnn Init failed");
         }
 
+        requestPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
         imageView = (ImageView) root.findViewById(R.id.imageViewDetection);
 
         Button buttonImage = (Button) root.findViewById(R.id.buttonDetectionAlbum);
@@ -79,7 +89,31 @@ public class DetectionFragment extends Fragment {
         buttonCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                File imgDir = new File(getFilePath(null));
+                // 创建照片
+                String photoName = System.currentTimeMillis() + ".png";
+                File picture = new File(imgDir, photoName);
+                if (!picture.exists()) {
+                    try {
+                        picture.createNewFile();
+                    } catch (IOException e) {
+                        Log.e("MainActivity", "choosePictureTypeDialog: 创建图片失败", e);
+                    }
+                }
+                if(Build.VERSION.SDK_INT>=24)
+                {
+                    imageUri= FileProvider.getUriForFile(getActivity(),
+                            "com.example.mobileobjectdetection.fileprovider",picture);
+                }
+                else
+                {
+                    imageUri=Uri.fromFile(picture);
+                }
+                // 调用相机拍照
+//                Intent camera=new Intent("android.media.action.IMAGE_CAPTURE");
+                Intent camera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                camera.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+                startActivityForResult(camera, TAKE_PHOTO);
             }
         });
 
@@ -110,6 +144,22 @@ public class DetectionFragment extends Fragment {
         });
 
         return root;
+    }
+
+    public String getFilePath(String dir) {
+        String path;
+        // 判断是否有外部存储，是否可用
+        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
+            path = getActivity().getExternalFilesDir(dir).getAbsolutePath();
+        } else {
+            // 使用内部储存
+            path = getActivity().getFilesDir() + File.separator + dir;
+        }
+        File file = new File(path);
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+        return path;
     }
 
     private void showObjects(YoloV5Ncnn.Obj[] objects)
@@ -190,20 +240,35 @@ public class DetectionFragment extends Fragment {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Log.i("MainActivity", "onRequestPermissionsResult: permission granted");
+        } else {
+            Log.i("MainActivity", "onRequestPermissionsResult: permission denied");
+            Toast.makeText(getActivity(), "You Denied Permission", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (resultCode == Activity.RESULT_OK && null != data) {
-            Uri selectedImage = data.getData();
-
             try
             {
                 if (requestCode == SELECT_IMAGE) {
+                    Uri selectedImage = data.getData();
                     bitmap = decodeUri(selectedImage);
 
                     yourSelectedImage = bitmap.copy(Bitmap.Config.ARGB_8888, true);
 
+                    imageView.setImageBitmap(bitmap);
+                }
+                else if (requestCode == TAKE_PHOTO){
+                    bitmap = decodeUri(imageUri);
+                    yourSelectedImage = bitmap.copy(Bitmap.Config.ARGB_8888, true);
                     imageView.setImageBitmap(bitmap);
                 }
             }

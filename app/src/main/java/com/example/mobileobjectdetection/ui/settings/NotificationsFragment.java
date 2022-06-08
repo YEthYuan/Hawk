@@ -19,9 +19,7 @@ public class NotificationsFragment extends Fragment {
                              ViewGroup container, Bundle savedInstanceState) {
         NotificationsViewModel notificationsViewModel =
                 new ViewModelProvider(this).get(NotificationsViewModel.class);
-        FaceViewModel faceViewModel =
-                new ViewModelProvider(this).get(FaceViewModel.class);
-        View root = inflater.inflate(R.layout.fragment_detection, container, false);
+        View root = inflater.inflate(R.layout.fragment_settings, container, false);
 
 
         return root;

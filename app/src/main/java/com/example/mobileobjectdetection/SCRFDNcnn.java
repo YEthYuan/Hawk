@@ -25,6 +25,6 @@ public class SCRFDNcnn
     public native boolean setOutputWindow(Surface surface);
 
     static {
-        System.loadLibrary("scrfdncnn");
+        System.loadLibrary("mobileobjectdetection");
     }
 }

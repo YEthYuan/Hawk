@@ -28,6 +28,8 @@ import com.example.mobileobjectdetection.SCRFDNcnn;
 
 public class FaceFragment extends Fragment {
 
+    private FaceViewModel faceViewModel;
+
     public static final int REQUEST_CAMERA = 100;
 
     private SCRFDNcnn scrfdncnn = new SCRFDNcnn();
@@ -42,19 +44,35 @@ public class FaceFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        FaceViewModel faceViewModel =
+        faceViewModel =
                 new ViewModelProvider(this).get(FaceViewModel.class);
-        View root = inflater.inflate(R.layout.fragment_detection, container, false);
+        View root = inflater.inflate(R.layout.fragment_face, container, false);
 
         getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        cameraView = (SurfaceView) root.findViewById(R.id.surfaceFaceCamView);
+        cameraView = (SurfaceView) root.findViewById(R.id.cameraview);
 
-        cameraView.getHolder().setFormat(PixelFormat.RGBA_8888);
+        SurfaceHolder mHolder = cameraView.getHolder();
+
+        mHolder.setFormat(PixelFormat.RGBA_8888);
+
+        mHolder.addCallback(new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceCreated(SurfaceHolder h) {
+            }
+            @Override
+            public void surfaceChanged(SurfaceHolder h, int format, int width, int height) {
+                scrfdncnn.setOutputWindow(mHolder.getSurface());
+            }
+            @Override
+            public void surfaceDestroyed(SurfaceHolder h) {
+            }
+        });
+        //cameraView.getHolder().setFormat(PixelFormat.RGBA_8888);
         //FIXME the callback bugs here
-//        cameraView.getHolder().addCallback(this);
+        //cameraView.getHolder().addCallback((SurfaceHolder.Callback) this);
 
-        Button buttonSwitchCamera = (Button) root.findViewById(R.id.buttonFaceSwitchCamera);
+        Button buttonSwitchCamera = (Button) root.findViewById(R.id.buttonSwitchCamera);
         buttonSwitchCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
@@ -69,7 +87,7 @@ public class FaceFragment extends Fragment {
             }
         });
 
-        spinnerModel = (Spinner) root.findViewById(R.id.spinnerFaceModel);
+        spinnerModel = (Spinner) root.findViewById(R.id.spinnerModel);
         spinnerModel.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long id)
@@ -87,7 +105,7 @@ public class FaceFragment extends Fragment {
             }
         });
 
-        spinnerCPUGPU = (Spinner) root.findViewById(R.id.spinnerFaceCPUGPU);
+        spinnerCPUGPU = (Spinner) root.findViewById(R.id.spinnerCPUGPU);
         spinnerCPUGPU.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long id)
@@ -120,10 +138,20 @@ public class FaceFragment extends Fragment {
         }
     }
 
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
-    {
-        scrfdncnn.setOutputWindow(holder.getSurface());
-    }
+//    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
+//    {
+//        scrfdncnn.setOutputWindow(holder.getSurface());
+//    }
+
+//    public void surfaceCreated(SurfaceHolder holder) {
+//        initRender(this.getWidth(), this.getHeight());
+//        new Thread(this).start();
+//    }
+//
+//    public void surfaceDestroyed(SurfaceHolder holder) {
+//        // TODO Auto-generated method stub
+//
+//    }
 
     @Override
     public void onResume()
